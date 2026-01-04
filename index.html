@@ -139,6 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let saldoLoja = 0;
   let custoTotal = 0;
   let lucroTotal = 0;
+  let alertado = {}; // controlando alertas por produto
 
   // 🔐 LOGIN
   btnLogin.onclick = async () => {
@@ -171,6 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
       custoTotal = d.custoTotal || 0;
       lucroTotal = d.lucroTotal || 0;
       render();
+      checarEstoqueBaixo();
     });
   }
 
@@ -242,6 +244,18 @@ document.addEventListener("DOMContentLoaded", () => {
     produtos[i].estoque += qtdNum;
     await salvar();
   };
+
+  // ⚠️ Checa estoque baixo e avisa
+  function checarEstoqueBaixo() {
+    produtos.forEach((p,i)=>{
+      if(p.estoque <=5 && !alertado[p.nome]){
+        alert(`⚠️ Estoque baixo do produto "${p.nome}"! Estoque atual: ${p.estoque}`);
+        alertado[p.nome] = true;
+      } else if(p.estoque >5){
+        alertado[p.nome] = false; // reseta alerta quando reabastecido
+      }
+    });
+  }
 
   // 🖥 Render
   function render() {
