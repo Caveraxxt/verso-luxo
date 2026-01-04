@@ -110,6 +110,24 @@ const lojaRef = doc(db, "loja", "principal");
 // 🔐 Senha
 const SENHA_CORRETA = "versoluxo123";
 
+// 📌 DOM
+const senha = document.getElementById("senha");
+const loginBox = document.getElementById("login");
+const appBox = document.getElementById("app");
+
+const nome = document.getElementById("nome");
+const compra = document.getElementById("compra");
+const venda = document.getElementById("venda");
+const estoque = document.getElementById("estoque");
+
+const lista = document.getElementById("lista");
+const historico = document.getElementById("historico");
+const saldo = document.getElementById("saldo");
+const custo = document.getElementById("custo");
+const lucro = document.getElementById("lucro");
+const divisao = document.getElementById("divisao");
+const btnAdd = document.getElementById("btnAdd");
+
 // 📦 Estado
 let produtos = [];
 let vendas = [];
@@ -123,8 +141,8 @@ window.login = async () => {
     alert("Senha incorreta");
     return;
   }
-  login.style.display = "none";
-  app.style.display = "block";
+  loginBox.style.display = "none";
+  appBox.style.display = "block";
   iniciarSync();
 };
 
@@ -158,7 +176,7 @@ async function salvar() {
 
 // ➕ Produto
 btnAdd.onclick = async () => {
-  if (!nome.value || compra.value<=0 || venda.value<=0 || estoque.value<0) {
+  if (!nome.value || compra.value <= 0 || venda.value <= 0 || estoque.value < 0) {
     alert("Preencha corretamente");
     return;
   }
@@ -177,6 +195,7 @@ window.vender = async i => {
   if (produtos[i].estoque <= 0) return alert("Sem estoque");
   produtos[i].estoque--;
   const lucroItem = produtos[i].venda - produtos[i].compra;
+
   saldoLoja += produtos[i].venda;
   custoTotal += produtos[i].compra;
   lucroTotal += lucroItem;
@@ -206,22 +225,22 @@ window.estornarVenda = async () => {
 // 🗑️ Remover
 window.removerProduto = async i => {
   if (!confirm(`Remover "${produtos[i].nome}"?`)) return;
-  produtos.splice(i,1);
+  produtos.splice(i, 1);
   await salvar();
 };
 
 // 🖥️ Render
 function render() {
   lista.innerHTML = "";
-  produtos.forEach((p,i)=>{
+  produtos.forEach((p, i) => {
     const baixo = p.estoque <= 5;
     lista.innerHTML += `
-    <tr class="${baixo ? 'baixo' : ''}">
+    <tr class="${baixo ? "baixo" : ""}">
       <td>${p.nome}</td>
       <td>R$ ${p.compra.toFixed(2)}</td>
       <td>R$ ${p.venda.toFixed(2)}</td>
       <td>${p.estoque}</td>
-      <td>${baixo ? '<span class="alerta">⚠️ ESTOQUE BAIXO</span>' : 'OK'}</td>
+      <td>${baixo ? "<span class='alerta'>⚠️ ESTOQUE BAIXO</span>" : "OK"}</td>
       <td>
         <button onclick="vender(${i})">Vender</button>
         <button class="remover" onclick="removerProduto(${i})">Remover</button>
@@ -230,7 +249,7 @@ function render() {
   });
 
   historico.innerHTML = "";
-  vendas.forEach(v=>{
+  vendas.forEach(v => {
     historico.innerHTML += `
     <tr>
       <td>${v.data}</td>
@@ -246,8 +265,9 @@ function render() {
   lucro.innerText = `Lucro total: R$ ${lucroTotal.toFixed(2)}`;
 
   divisao.innerHTML = "";
-  [33,33,16.5,16.5].forEach((p,i)=>{
-    const nomes=["Caixa","Reinvestimento","Bruno","Pedro"];
+  const partes = [33,33,16.5,16.5];
+  const nomes = ["Caixa","Reinvestimento","Bruno","Pedro"];
+  partes.forEach((p,i)=>{
     divisao.innerHTML += `<li>${nomes[i]}: R$ ${(lucroTotal*(p/100)).toFixed(2)}</li>`;
   });
 }
