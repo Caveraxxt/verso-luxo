@@ -16,6 +16,7 @@ th,td { border-bottom:1px solid #ddd; padding:8px; text-align:center; font-size:
 #app { display:none; }
 .remover { background:#c0392b; margin-left:5px; }
 .reabastecer { background:#2980b9; margin-left:5px; }
+.editar { background:#27ae60; margin-left:5px; }
 .baixo { background:#fff3cd; }
 .alerta { color:#c0392b; font-weight:bold; font-size:12px; }
 </style>
@@ -139,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let saldoLoja = 0;
   let custoTotal = 0;
   let lucroTotal = 0;
-  let alertado = {}; // controlando alertas por produto
+  let alertado = {};
 
   // 🔐 LOGIN
   btnLogin.onclick = async () => {
@@ -245,14 +246,29 @@ document.addEventListener("DOMContentLoaded", () => {
     await salvar();
   };
 
-  // ⚠️ Checa estoque baixo e avisa
+  // ✏️ Editar preço
+  window.editarPreco = async i => {
+    const novoCompra = prompt(`Digite o novo preço de compra de "${produtos[i].nome}":`, produtos[i].compra);
+    const novoVenda = prompt(`Digite o novo preço de venda de "${produtos[i].nome}":`, produtos[i].venda);
+    const c = Number(novoCompra);
+    const v = Number(novoVenda);
+    if (isNaN(c) || isNaN(v) || c<=0 || v<=0) {
+      alert("Valores inválidos");
+      return;
+    }
+    produtos[i].compra = c;
+    produtos[i].venda = v;
+    await salvar();
+  };
+
+  // ⚠️ Checa estoque baixo
   function checarEstoqueBaixo() {
     produtos.forEach((p,i)=>{
       if(p.estoque <=5 && !alertado[p.nome]){
         alert(`⚠️ Estoque baixo do produto "${p.nome}"! Estoque atual: ${p.estoque}`);
         alertado[p.nome] = true;
       } else if(p.estoque >5){
-        alertado[p.nome] = false; // reseta alerta quando reabastecido
+        alertado[p.nome] = false;
       }
     });
   }
@@ -273,6 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <button onclick="vender(${i})">Vender</button>
           <button class="remover" onclick="removerProduto(${i})">Remover</button>
           <button class="reabastecer" onclick="reabastecer(${i})">Reabastecer</button>
+          <button class="editar" onclick="editarPreco(${i})">Editar Preço</button>
         </td>
       </tr>`;
     });
