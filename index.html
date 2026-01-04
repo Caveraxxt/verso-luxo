@@ -205,11 +205,24 @@ window.estornarVenda = async function () {
   if (vendas.length === 0) return alert('Nada para estornar');
 
   const v = vendas.pop();
-  produtos[v.produtoIndex].estoque++;
+  if (produtos[v.produtoIndex]) {
+    produtos[v.produtoIndex].estoque++;
+  }
   saldoLoja -= v.valorVenda;
   custoTotal -= v.custo;
   lucroTotal -= v.lucro;
 
+  await salvar();
+};
+
+window.removerProduto = async function (i) {
+  const p = produtos[i];
+  const confirmar = confirm(`Deseja remover o produto "${p.nome}"?
+
+⚠️ Isso não apaga vendas antigas.`);
+  if (!confirmar) return;
+
+  produtos.splice(i, 1);
   await salvar();
 };
 
@@ -218,11 +231,10 @@ function render() {
   lista.innerHTML = '';
   produtos.forEach((p, i) => {
     lista.innerHTML += `<tr>
-      <td>${p.nome}</td>
-      <td>R$ ${p.compra.toFixed(2)}</td>
-      <td>R$ ${p.venda.toFixed(2)}</td>
-      <td>${p.estoque}</td>
-      <td><button onclick="vender(${i})">Vender</button></td>
+      <td>
+<button onclick="vender(${i})">Vender</button>
+<button onclick="removerProduto(${i})" style="margin-left:5px;background:#c0392b;color:#fff;">Remover</button>
+</td>
     </tr>`;
   });
 
