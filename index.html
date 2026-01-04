@@ -97,10 +97,8 @@ import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstat
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  // 🔐 CONFIG
   const SENHA_CORRETA = "versoluxo123";
 
-  // 🔥 FIREBASE
   const firebaseConfig = {
     apiKey: "AIzaSyAdz_ARwuY1uFGS9jiE_C_xhBULgez0lco",
     authDomain: "verso-luxo.firebaseapp.com",
@@ -114,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const db = getFirestore(appFirebase);
   const lojaRef = doc(db, "loja", "principal");
 
-  // 📌 DOM
   const senha = document.getElementById("senha");
   const btnLogin = document.getElementById("btnLogin");
   const loginBox = document.getElementById("loginBox");
@@ -134,7 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const divisao = document.getElementById("divisao");
   const btnEstorno = document.getElementById("btnEstorno");
 
-  // 📦 ESTADO
   let produtos = [];
   let vendas = [];
   let saldoLoja = 0;
@@ -142,7 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let lucroTotal = 0;
   let alertado = {};
 
-  // 🔐 LOGIN
   btnLogin.onclick = async () => {
     if (senha.value !== SENHA_CORRETA) {
       alert("Senha incorreta");
@@ -181,7 +176,6 @@ document.addEventListener("DOMContentLoaded", () => {
     await setDoc(lojaRef, { produtos, vendas, saldoLoja, custoTotal, lucroTotal });
   }
 
-  // ➕ Adicionar Produto
   btnAdd.onclick = async () => {
     if (!nome.value || compra.value<=0 || venda.value<=0 || estoque.value<0) {
       alert("Preencha corretamente");
@@ -197,7 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
     await salvar();
   };
 
-  // ↩️ Estornar
   btnEstorno.onclick = async () => {
     if (!vendas.length) return alert("Nada para estornar");
     const v = vendas.pop();
@@ -208,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
     await salvar();
   };
 
-  // 💰 Vender
   window.vender = async i => {
     if (produtos[i].estoque <= 0) return alert("Sem estoque");
     produtos[i].estoque--;
@@ -227,14 +219,12 @@ document.addEventListener("DOMContentLoaded", () => {
     await salvar();
   };
 
-  // 🗑 Remover Produto
   window.removerProduto = async i => {
     if (!confirm(`Remover ${produtos[i].nome}?`)) return;
     produtos.splice(i,1);
     await salvar();
   };
 
-  // 📦 Reabastecer Estoque
   window.reabastecer = async i => {
     const quantidade = prompt(`Digite a quantidade a adicionar ao estoque de "${produtos[i].nome}":`);
     const qtdNum = Number(quantidade);
@@ -246,22 +236,29 @@ document.addEventListener("DOMContentLoaded", () => {
     await salvar();
   };
 
-  // ✏️ Editar preço
-  window.editarPreco = async i => {
-    const novoCompra = prompt(`Digite o novo preço de compra de "${produtos[i].nome}":`, produtos[i].compra);
-    const novoVenda = prompt(`Digite o novo preço de venda de "${produtos[i].nome}":`, produtos[i].venda);
+  // ✏️ Editar Produto completo
+  window.editarProduto = async i => {
+    const novoNome = prompt("Nome do produto:", produtos[i].nome);
+    const novoCompra = prompt("Preço de compra:", produtos[i].compra);
+    const novoVenda = prompt("Preço de venda:", produtos[i].venda);
+    const novoEstoque = prompt("Quantidade em estoque:", produtos[i].estoque);
+
     const c = Number(novoCompra);
     const v = Number(novoVenda);
-    if (isNaN(c) || isNaN(v) || c<=0 || v<=0) {
+    const e = Number(novoEstoque);
+
+    if(!novoNome || isNaN(c)||isNaN(v)||isNaN(e)||c<=0||v<=0||e<0){
       alert("Valores inválidos");
       return;
     }
+
+    produtos[i].nome = novoNome;
     produtos[i].compra = c;
     produtos[i].venda = v;
+    produtos[i].estoque = e;
     await salvar();
   };
 
-  // ⚠️ Checa estoque baixo
   function checarEstoqueBaixo() {
     produtos.forEach((p,i)=>{
       if(p.estoque <=5 && !alertado[p.nome]){
@@ -273,7 +270,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 🖥 Render
   function render() {
     lista.innerHTML = "";
     produtos.forEach((p,i)=>{
@@ -289,7 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <button onclick="vender(${i})">Vender</button>
           <button class="remover" onclick="removerProduto(${i})">Remover</button>
           <button class="reabastecer" onclick="reabastecer(${i})">Reabastecer</button>
-          <button class="editar" onclick="editarPreco(${i})">Editar Preço</button>
+          <button class="editar" onclick="editarProduto(${i})">Editar Produto</button>
         </td>
       </tr>`;
     });
