@@ -1,29 +1,33 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Verso Luxo - Gestão Sincronizada</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:20px; }
-    h1, h2 { color:#111; }
-    .card { background:#fff; padding:16px; margin-bottom:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    input, button { padding:10px; margin:6px 0; width:100%; font-size:16px; }
-    button { background:#111; color:#fff; border:none; cursor:pointer; }
-    table { width:100%; border-collapse: collapse; margin-top:10px; }
-    th, td { border-bottom:1px solid #ddd; padding:8px; font-size:14px; }
-    #app { display:none; }
-  </style>
+<meta charset="UTF-8" />
+<title>Verso Luxo - Gestão</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:20px; }
+h1,h2 { color:#111; }
+.card { background:#fff; padding:16px; margin-bottom:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.1); }
+input,button { padding:10px; margin:6px 0; width:100%; font-size:16px; }
+button { background:#111; color:#fff; border:none; cursor:pointer; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th,td { border-bottom:1px solid #ddd; padding:8px; font-size:14px; text-align:center; }
+#app { display:none; }
+.remover { background:#c0392b; }
+</style>
 </head>
+
 <body>
 
 <div class="card" id="login">
   <h2>🔐 Acesso Restrito – Verso Luxo</h2>
-  <input id="senha" type="password" placeholder="Digite a senha" />
+  <input id="senha" type="password" placeholder="Senha única" />
   <button onclick="login()">Entrar</button>
 </div>
 
 <div id="app">
+
 <h1>Verso Luxo – Gestão Sincronizada</h1>
 
 <div class="card">
@@ -39,7 +43,13 @@
   <h2>Estoque e Vendas</h2>
   <table>
     <thead>
-      <tr><th>Produto</th><th>Compra</th><th>Venda</th><th>Estoque</th><th>Ação</th></tr>
+      <tr>
+        <th>Produto</th>
+        <th>Compra</th>
+        <th>Venda</th>
+        <th>Estoque</th>
+        <th>Ação</th>
+      </tr>
     </thead>
     <tbody id="lista"></tbody>
   </table>
@@ -62,18 +72,25 @@
   <h2>Histórico de Vendas</h2>
   <table>
     <thead>
-      <tr><th>Data</th><th>Produto</th><th>Venda</th><th>Custo</th><th>Lucro</th></tr>
+      <tr>
+        <th>Data</th>
+        <th>Produto</th>
+        <th>Venda</th>
+        <th>Custo</th>
+        <th>Lucro</th>
+      </tr>
     </thead>
     <tbody id="historico"></tbody>
   </table>
 </div>
+
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-// ===== FIREBASE =====
+// 🔥 FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyAdz_ARwuY1uFGS9jiE_C_xhBULgez0lco",
   authDomain: "verso-luxo.firebaseapp.com",
@@ -85,43 +102,30 @@ const firebaseConfig = {
 
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
-const lojaRef = doc(db, 'loja', 'principal');
+const lojaRef = doc(db, "loja", "principal");
 
-// ===== SENHA =====
-const SENHA_CORRETA = 'versoluxo123';
+// 🔐 SENHA
+const SENHA_CORRETA = "versoluxo123";
 
-// ===== DOM =====
-const senhaInput = document.getElementById('senha');
-const nomeInput = document.getElementById('nome');
-const compraInput = document.getElementById('compra');
-const vendaInput = document.getElementById('venda');
-const estoqueInput = document.getElementById('estoque');
-const lista = document.getElementById('lista');
-const historico = document.getElementById('historico');
-const saldo = document.getElementById('saldo');
-const custo = document.getElementById('custo');
-const lucro = document.getElementById('lucro');
-const divisao = document.getElementById('divisao');
-
-// ===== ESTADO =====
+// 🧠 ESTADO
 let produtos = [];
 let vendas = [];
 let saldoLoja = 0;
 let custoTotal = 0;
 let lucroTotal = 0;
 
-// ===== LOGIN =====
-window.login = async function () {
-  if (senhaInput.value !== SENHA_CORRETA) {
-    alert('Senha incorreta');
+// 🔐 LOGIN
+window.login = async () => {
+  if (document.getElementById("senha").value !== SENHA_CORRETA) {
+    alert("Senha incorreta");
     return;
   }
-  document.getElementById('login').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  await iniciarSync();
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  iniciarSync();
 };
 
-// ===== SYNC =====
+// 🔄 SYNC
 async function iniciarSync() {
   const snap = await getDoc(lojaRef);
   if (!snap.exists()) {
@@ -134,8 +138,8 @@ async function iniciarSync() {
     });
   }
 
-  onSnapshot(lojaRef, (docSnap) => {
-    const d = docSnap.data();
+  onSnapshot(lojaRef, s => {
+    const d = s.data();
     produtos = d.produtos || [];
     vendas = d.vendas || [];
     saldoLoja = d.saldoLoja || 0;
@@ -146,54 +150,42 @@ async function iniciarSync() {
 }
 
 async function salvar() {
-  await setDoc(lojaRef, {
-    produtos,
-    vendas,
-    saldoLoja,
-    custoTotal,
-    lucroTotal
-  });
+  await setDoc(lojaRef, { produtos, vendas, saldoLoja, custoTotal, lucroTotal });
 }
 
-// ===== AÇÕES =====
-window.addProduto = async function () {
-  const nome = nomeInput.value.trim();
-  const compra = Number(compraInput.value);
-  const venda = Number(vendaInput.value);
-  const estoque = Number(estoqueInput.value);
+// ➕ PRODUTO
+window.addProduto = async () => {
+  const nome = document.getElementById("nome").value.trim();
+  const compra = +document.getElementById("compra").value;
+  const venda = +document.getElementById("venda").value;
+  const estoque = +document.getElementById("estoque").value;
 
   if (!nome || compra <= 0 || venda <= 0 || estoque < 0) {
-    alert('Preencha todos os campos corretamente');
+    alert("Preencha corretamente");
     return;
   }
 
   produtos.push({ nome, compra, venda, estoque });
-
-  nomeInput.value = '';
-  compraInput.value = '';
-  vendaInput.value = '';
-  estoqueInput.value = '';
-
+  document.querySelectorAll("input").forEach(i => i.value = "");
   await salvar();
 };
 
-window.vender = async function (i) {
-  if (produtos[i].estoque <= 0) return alert('Sem estoque');
+// 💰 VENDER
+window.vender = async i => {
+  if (produtos[i].estoque <= 0) return alert("Sem estoque");
 
   produtos[i].estoque--;
-  const custoItem = produtos[i].compra;
-  const valorVenda = produtos[i].venda;
-  const lucroItem = valorVenda - custoItem;
+  const lucroItem = produtos[i].venda - produtos[i].compra;
 
-  saldoLoja += valorVenda;
-  custoTotal += custoItem;
+  saldoLoja += produtos[i].venda;
+  custoTotal += produtos[i].compra;
   lucroTotal += lucroItem;
 
   vendas.push({
     data: new Date().toLocaleString(),
     nome: produtos[i].nome,
-    valorVenda,
-    custo: custoItem,
+    valorVenda: produtos[i].venda,
+    custo: produtos[i].compra,
     lucro: lucroItem,
     produtoIndex: i
   });
@@ -201,13 +193,12 @@ window.vender = async function (i) {
   await salvar();
 };
 
-window.estornarVenda = async function () {
-  if (vendas.length === 0) return alert('Nada para estornar');
+// ↩️ ESTORNAR
+window.estornarVenda = async () => {
+  if (!vendas.length) return alert("Nada para estornar");
 
   const v = vendas.pop();
-  if (produtos[v.produtoIndex]) {
-    produtos[v.produtoIndex].estoque++;
-  }
+  produtos[v.produtoIndex].estoque++;
   saldoLoja -= v.valorVenda;
   custoTotal -= v.custo;
   lucroTotal -= v.lucro;
@@ -215,32 +206,34 @@ window.estornarVenda = async function () {
   await salvar();
 };
 
-window.removerProduto = async function (i) {
-  const p = produtos[i];
-  const confirmar = confirm(`Deseja remover o produto "${p.nome}"?
-
-⚠️ Isso não apaga vendas antigas.`);
-  if (!confirmar) return;
-
+// 🗑️ REMOVER PRODUTO
+window.removerProduto = async i => {
+  if (!confirm(`Remover ${produtos[i].nome}?`)) return;
   produtos.splice(i, 1);
   await salvar();
 };
 
-// ===== RENDER =====
+// 🖥️ RENDER
 function render() {
-  lista.innerHTML = '';
-  produtos.forEach((p, i) => {
-    lista.innerHTML += `<tr>
+  lista.innerHTML = "";
+  produtos.forEach((p,i) => {
+    lista.innerHTML += `
+    <tr>
+      <td>${p.nome}</td>
+      <td>R$ ${p.compra.toFixed(2)}</td>
+      <td>R$ ${p.venda.toFixed(2)}</td>
+      <td>${p.estoque}</td>
       <td>
-<button onclick="vender(${i})">Vender</button>
-<button onclick="removerProduto(${i})" style="margin-left:5px;background:#c0392b;color:#fff;">Remover</button>
-</td>
+        <button onclick="vender(${i})">Vender</button>
+        <button class="remover" onclick="removerProduto(${i})">Remover</button>
+      </td>
     </tr>`;
   });
 
-  historico.innerHTML = '';
+  historico.innerHTML = "";
   vendas.forEach(v => {
-    historico.innerHTML += `<tr>
+    historico.innerHTML += `
+    <tr>
       <td>${v.data}</td>
       <td>${v.nome}</td>
       <td>R$ ${v.valorVenda.toFixed(2)}</td>
@@ -249,21 +242,20 @@ function render() {
     </tr>`;
   });
 
-  saldo.innerText = `Saldo da loja: R$ ${saldoLoja.toFixed(2)}`;
-  custo.innerText = `Custo total: R$ ${custoTotal.toFixed(2)}`;
-  lucro.innerText = `Lucro total: R$ ${lucroTotal.toFixed(2)}`;
+  saldo.innerText = `Saldo: R$ ${saldoLoja.toFixed(2)}`;
+  custo.innerText = `Custo: R$ ${custoTotal.toFixed(2)}`;
+  lucro.innerText = `Lucro: R$ ${lucroTotal.toFixed(2)}`;
 
-  divisao.innerHTML = '';
-  const partes = [33, 33, 16.5, 16.5];
-  const nomes = ['Caixa da Empresa', 'Reinvestimento', 'Bruno', 'Pedro'];
-  partes.forEach((p, i) => {
-    divisao.innerHTML += `<li>${nomes[i]}: R$ ${(lucroTotal * (p / 100)).toFixed(2)}</li>`;
+  divisao.innerHTML = "";
+  const partes = [33,33,16.5,16.5];
+  const nomes = ["Caixa","Reinvestimento","Bruno","Pedro"];
+  partes.forEach((p,i)=>{
+    divisao.innerHTML += `<li>${nomes[i]}: R$ ${(lucroTotal*(p/100)).toFixed(2)}</li>`;
   });
 }
 
-// botão
-const btnAdd = document.getElementById('btnAdd');
-btnAdd.addEventListener('click', addProduto);
+document.getElementById("btnAdd").onclick = addProduto;
 </script>
+
 </body>
 </html>
