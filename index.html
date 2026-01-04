@@ -15,6 +15,7 @@ table { width:100%; border-collapse:collapse; margin-top:10px; }
 th,td { border-bottom:1px solid #ddd; padding:8px; text-align:center; font-size:14px; }
 #app { display:none; }
 .remover { background:#c0392b; margin-left:5px; }
+.reabastecer { background:#2980b9; margin-left:5px; }
 .baixo { background:#fff3cd; }
 .alerta { color:#c0392b; font-weight:bold; font-size:12px; }
 </style>
@@ -22,15 +23,15 @@ th,td { border-bottom:1px solid #ddd; padding:8px; text-align:center; font-size:
 
 <body>
 
-<div class="card" id="login">
+<div class="card" id="loginBox">
   <h2>🔐 Acesso Restrito – Verso Luxo</h2>
   <input id="senha" type="password" placeholder="Senha única">
-  <button onclick="login()">Entrar</button>
+  <button id="btnLogin">Entrar</button>
 </div>
 
 <div id="app">
 
-<h1>Verso Luxo – Gestão Sincronizada</h1>
+<h1>Verso Luxo – Gestão</h1>
 
 <div class="card">
   <h2>Cadastro de Produto</h2>
@@ -42,7 +43,7 @@ th,td { border-bottom:1px solid #ddd; padding:8px; text-align:center; font-size:
 </div>
 
 <div class="card">
-  <h2>Estoque e Vendas</h2>
+  <h2>Estoque</h2>
   <table>
     <thead>
       <tr>
@@ -56,11 +57,11 @@ th,td { border-bottom:1px solid #ddd; padding:8px; text-align:center; font-size:
     </thead>
     <tbody id="lista"></tbody>
   </table>
-  <button onclick="estornarVenda()">Estornar última venda</button>
+  <button id="btnEstorno">Estornar última venda</button>
 </div>
 
 <div class="card">
-  <h2>Resumo Financeiro</h2>
+  <h2>Resumo</h2>
   <p id="saldo"></p>
   <p id="custo"></p>
   <p id="lucro"></p>
@@ -93,184 +94,200 @@ th,td { border-bottom:1px solid #ddd; padding:8px; text-align:center; font-size:
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-// 🔥 Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyAdz_ARwuY1uFGS9jiE_C_xhBULgez0lco",
-  authDomain: "verso-luxo.firebaseapp.com",
-  projectId: "verso-luxo",
-  storageBucket: "verso-luxo.firebasestorage.app",
-  messagingSenderId: "280590041922",
-  appId: "1:280590041922:web:2963525e25fb360aea7edb"
-};
+document.addEventListener("DOMContentLoaded", () => {
 
-const appFirebase = initializeApp(firebaseConfig);
-const db = getFirestore(appFirebase);
-const lojaRef = doc(db, "loja", "principal");
+  // 🔐 CONFIG
+  const SENHA_CORRETA = "versoluxo123";
 
-// 🔐 Senha
-const SENHA_CORRETA = "versoluxo123";
+  // 🔥 FIREBASE
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdz_ARwuY1uFGS9jiE_C_xhBULgez0lco",
+    authDomain: "verso-luxo.firebaseapp.com",
+    projectId: "verso-luxo",
+    storageBucket: "verso-luxo.firebasestorage.app",
+    messagingSenderId: "280590041922",
+    appId: "1:280590041922:web:2963525e25fb360aea7edb"
+  };
 
-// 📌 DOM
-const senha = document.getElementById("senha");
-const loginBox = document.getElementById("login");
-const appBox = document.getElementById("app");
+  const appFirebase = initializeApp(firebaseConfig);
+  const db = getFirestore(appFirebase);
+  const lojaRef = doc(db, "loja", "principal");
 
-const nome = document.getElementById("nome");
-const compra = document.getElementById("compra");
-const venda = document.getElementById("venda");
-const estoque = document.getElementById("estoque");
+  // 📌 DOM
+  const senha = document.getElementById("senha");
+  const btnLogin = document.getElementById("btnLogin");
+  const loginBox = document.getElementById("loginBox");
+  const app = document.getElementById("app");
 
-const lista = document.getElementById("lista");
-const historico = document.getElementById("historico");
-const saldo = document.getElementById("saldo");
-const custo = document.getElementById("custo");
-const lucro = document.getElementById("lucro");
-const divisao = document.getElementById("divisao");
-const btnAdd = document.getElementById("btnAdd");
+  const nome = document.getElementById("nome");
+  const compra = document.getElementById("compra");
+  const venda = document.getElementById("venda");
+  const estoque = document.getElementById("estoque");
+  const btnAdd = document.getElementById("btnAdd");
 
-// 📦 Estado
-let produtos = [];
-let vendas = [];
-let saldoLoja = 0;
-let custoTotal = 0;
-let lucroTotal = 0;
+  const lista = document.getElementById("lista");
+  const historico = document.getElementById("historico");
+  const saldo = document.getElementById("saldo");
+  const custo = document.getElementById("custo");
+  const lucro = document.getElementById("lucro");
+  const divisao = document.getElementById("divisao");
+  const btnEstorno = document.getElementById("btnEstorno");
 
-// 🔐 Login
-window.login = async () => {
-  if (senha.value !== SENHA_CORRETA) {
-    alert("Senha incorreta");
-    return;
-  }
-  loginBox.style.display = "none";
-  appBox.style.display = "block";
-  iniciarSync();
-};
+  // 📦 ESTADO
+  let produtos = [];
+  let vendas = [];
+  let saldoLoja = 0;
+  let custoTotal = 0;
+  let lucroTotal = 0;
 
-// 🔄 Sync
-async function iniciarSync() {
-  const snap = await getDoc(lojaRef);
-  if (!snap.exists()) {
-    await setDoc(lojaRef, {
-      produtos: [],
-      vendas: [],
-      saldoLoja: 0,
-      custoTotal: 0,
-      lucroTotal: 0
+  // 🔐 LOGIN
+  btnLogin.onclick = async () => {
+    if (senha.value !== SENHA_CORRETA) {
+      alert("Senha incorreta");
+      return;
+    }
+    loginBox.style.display = "none";
+    app.style.display = "block";
+    iniciarSync();
+  };
+
+  async function iniciarSync() {
+    const snap = await getDoc(lojaRef);
+    if (!snap.exists()) {
+      await setDoc(lojaRef, {
+        produtos: [],
+        vendas: [],
+        saldoLoja: 0,
+        custoTotal: 0,
+        lucroTotal: 0
+      });
+    }
+
+    onSnapshot(lojaRef, s => {
+      const d = s.data();
+      produtos = d.produtos || [];
+      vendas = d.vendas || [];
+      saldoLoja = d.saldoLoja || 0;
+      custoTotal = d.custoTotal || 0;
+      lucroTotal = d.lucroTotal || 0;
+      render();
     });
   }
 
-  onSnapshot(lojaRef, s => {
-    const d = s.data();
-    produtos = d.produtos || [];
-    vendas = d.vendas || [];
-    saldoLoja = d.saldoLoja || 0;
-    custoTotal = d.custoTotal || 0;
-    lucroTotal = d.lucroTotal || 0;
-    render();
-  });
-}
-
-async function salvar() {
-  await setDoc(lojaRef, { produtos, vendas, saldoLoja, custoTotal, lucroTotal });
-}
-
-// ➕ Produto
-btnAdd.onclick = async () => {
-  if (!nome.value || compra.value <= 0 || venda.value <= 0 || estoque.value < 0) {
-    alert("Preencha corretamente");
-    return;
+  async function salvar() {
+    await setDoc(lojaRef, { produtos, vendas, saldoLoja, custoTotal, lucroTotal });
   }
-  produtos.push({
-    nome: nome.value,
-    compra: +compra.value,
-    venda: +venda.value,
-    estoque: +estoque.value
-  });
-  nome.value = compra.value = venda.value = estoque.value = "";
-  await salvar();
-};
 
-// 💰 Vender
-window.vender = async i => {
-  if (produtos[i].estoque <= 0) return alert("Sem estoque");
-  produtos[i].estoque--;
-  const lucroItem = produtos[i].venda - produtos[i].compra;
+  // ➕ Adicionar Produto
+  btnAdd.onclick = async () => {
+    if (!nome.value || compra.value<=0 || venda.value<=0 || estoque.value<0) {
+      alert("Preencha corretamente");
+      return;
+    }
+    produtos.push({
+      nome: nome.value,
+      compra:+compra.value,
+      venda:+venda.value,
+      estoque:+estoque.value
+    });
+    nome.value = compra.value = venda.value = estoque.value = "";
+    await salvar();
+  };
 
-  saldoLoja += produtos[i].venda;
-  custoTotal += produtos[i].compra;
-  lucroTotal += lucroItem;
+  // ↩️ Estornar
+  btnEstorno.onclick = async () => {
+    if (!vendas.length) return alert("Nada para estornar");
+    const v = vendas.pop();
+    produtos[v.produtoIndex].estoque++;
+    saldoLoja -= v.valorVenda;
+    custoTotal -= v.custo;
+    lucroTotal -= v.lucro;
+    await salvar();
+  };
 
-  vendas.push({
-    data: new Date().toLocaleString(),
-    nome: produtos[i].nome,
-    valorVenda: produtos[i].venda,
-    custo: produtos[i].compra,
-    lucro: lucroItem,
-    produtoIndex: i
-  });
-  await salvar();
-};
+  // 💰 Vender
+  window.vender = async i => {
+    if (produtos[i].estoque <= 0) return alert("Sem estoque");
+    produtos[i].estoque--;
+    const lucroItem = produtos[i].venda - produtos[i].compra;
+    saldoLoja += produtos[i].venda;
+    custoTotal += produtos[i].compra;
+    lucroTotal += lucroItem;
+    vendas.push({
+      data:new Date().toLocaleString(),
+      nome:produtos[i].nome,
+      valorVenda:produtos[i].venda,
+      custo:produtos[i].compra,
+      lucro:lucroItem,
+      produtoIndex:i
+    });
+    await salvar();
+  };
 
-// ↩️ Estornar
-window.estornarVenda = async () => {
-  if (!vendas.length) return alert("Nada para estornar");
-  const v = vendas.pop();
-  produtos[v.produtoIndex].estoque++;
-  saldoLoja -= v.valorVenda;
-  custoTotal -= v.custo;
-  lucroTotal -= v.lucro;
-  await salvar();
-};
+  // 🗑 Remover Produto
+  window.removerProduto = async i => {
+    if (!confirm(`Remover ${produtos[i].nome}?`)) return;
+    produtos.splice(i,1);
+    await salvar();
+  };
 
-// 🗑️ Remover
-window.removerProduto = async i => {
-  if (!confirm(`Remover "${produtos[i].nome}"?`)) return;
-  produtos.splice(i, 1);
-  await salvar();
-};
+  // 📦 Reabastecer Estoque
+  window.reabastecer = async i => {
+    const quantidade = prompt(`Digite a quantidade a adicionar ao estoque de "${produtos[i].nome}":`);
+    const qtdNum = Number(quantidade);
+    if (!quantidade || isNaN(qtdNum) || qtdNum <= 0) {
+      alert("Quantidade inválida");
+      return;
+    }
+    produtos[i].estoque += qtdNum;
+    await salvar();
+  };
 
-// 🖥️ Render
-function render() {
-  lista.innerHTML = "";
-  produtos.forEach((p, i) => {
-    const baixo = p.estoque <= 5;
-    lista.innerHTML += `
-    <tr class="${baixo ? "baixo" : ""}">
-      <td>${p.nome}</td>
-      <td>R$ ${p.compra.toFixed(2)}</td>
-      <td>R$ ${p.venda.toFixed(2)}</td>
-      <td>${p.estoque}</td>
-      <td>${baixo ? "<span class='alerta'>⚠️ ESTOQUE BAIXO</span>" : "OK"}</td>
-      <td>
-        <button onclick="vender(${i})">Vender</button>
-        <button class="remover" onclick="removerProduto(${i})">Remover</button>
-      </td>
-    </tr>`;
-  });
+  // 🖥 Render
+  function render() {
+    lista.innerHTML = "";
+    produtos.forEach((p,i)=>{
+      const baixo = p.estoque<=5;
+      lista.innerHTML += `
+      <tr class="${baixo?'baixo':''}">
+        <td>${p.nome}</td>
+        <td>R$ ${p.compra.toFixed(2)}</td>
+        <td>R$ ${p.venda.toFixed(2)}</td>
+        <td>${p.estoque}</td>
+        <td>${baixo?'⚠️ Baixo':'OK'}</td>
+        <td>
+          <button onclick="vender(${i})">Vender</button>
+          <button class="remover" onclick="removerProduto(${i})">Remover</button>
+          <button class="reabastecer" onclick="reabastecer(${i})">Reabastecer</button>
+        </td>
+      </tr>`;
+    });
 
-  historico.innerHTML = "";
-  vendas.forEach(v => {
-    historico.innerHTML += `
-    <tr>
-      <td>${v.data}</td>
-      <td>${v.nome}</td>
-      <td>R$ ${v.valorVenda.toFixed(2)}</td>
-      <td>R$ ${v.custo.toFixed(2)}</td>
-      <td>R$ ${v.lucro.toFixed(2)}</td>
-    </tr>`;
-  });
+    historico.innerHTML="";
+    vendas.forEach(v=>{
+      historico.innerHTML+=`
+      <tr>
+        <td>${v.data}</td>
+        <td>${v.nome}</td>
+        <td>R$ ${v.valorVenda.toFixed(2)}</td>
+        <td>R$ ${v.custo.toFixed(2)}</td>
+        <td>R$ ${v.lucro.toFixed(2)}</td>
+      </tr>`;
+    });
 
-  saldo.innerText = `Saldo da loja: R$ ${saldoLoja.toFixed(2)}`;
-  custo.innerText = `Custo total: R$ ${custoTotal.toFixed(2)}`;
-  lucro.innerText = `Lucro total: R$ ${lucroTotal.toFixed(2)}`;
+    saldo.innerText = `Saldo: R$ ${saldoLoja.toFixed(2)}`;
+    custo.innerText = `Custo: R$ ${custoTotal.toFixed(2)}`;
+    lucro.innerText = `Lucro: R$ ${lucroTotal.toFixed(2)}`;
 
-  divisao.innerHTML = "";
-  const partes = [33,33,16.5,16.5];
-  const nomes = ["Caixa","Reinvestimento","Bruno","Pedro"];
-  partes.forEach((p,i)=>{
-    divisao.innerHTML += `<li>${nomes[i]}: R$ ${(lucroTotal*(p/100)).toFixed(2)}</li>`;
-  });
-}
+    divisao.innerHTML="";
+    const partes = [33,33,16.5,16.5];
+    const nomes = ["Caixa","Reinvest.","Bruno","Pedro"];
+    partes.forEach((p,i)=>{
+      divisao.innerHTML += `<li>${nomes[i]}: R$ ${(lucroTotal*(p/100)).toFixed(2)}</li>`;
+    });
+  }
+
+});
 </script>
 
 </body>
